@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Alongamento • Sessões e Timer</title>
+
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
+
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">🧘</div>
+      <div class="brandText">
+        <h1>Alongamento</h1>
+        <p class="sub">Pré/Pós • Vídeo do YouTube • Regressiva 5→1 • Alternância E/D (se configurado)</p>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="pill" id="statusPill">Pronto</div>
+      <button class="iconBtn" id="installBtn" title="Instalar (se disponível)" aria-label="Instalar">⬇️</button>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="sessao" role="tab" aria-selected="true">Sessão</button>
+    <button class="tab" data-tab="banco" role="tab" aria-selected="false">Banco</button>
+    <button class="tab" data-tab="historico" role="tab" aria-selected="false">Histórico & Exportar</button>
+  </nav>
+
+  <main class="container">
+    <!-- TAB: SESSAO -->
+    <section class="tabPanel active" id="tab-sessao" role="tabpanel">
+      <div class="grid">
+        <section class="card">
+          <div class="cardHead">
+            <h2>Configuração</h2>
+            <div class="mini" id="summaryLine">—</div>
+          </div>
+
+          <div class="form">
+            <div class="row2">
+              <label>
+                Tipo
+                <select id="mode">
+                  <option value="pre" selected>Pré-treino (dinâmico)</option>
+                  <option value="post">Pós-treino (estático)</option>
+                </select>
+              </label>
+
+              <label>
+                Tempo total (min)
+                <input id="totalMinutes" type="number" min="1" max="180" step="1" value="8" />
+              </label>
+            </div>
+
+            <div class="row2">
+              <label>
+                Tempo por alongamento (s)
+                <select id="stretchSeconds">
+                  <option value="15">15</option>
+                  <option value="20">20</option>
+                  <option value="25">25</option>
+                  <option value="30" selected>30</option>
+                  <option value="40">40</option>
+                  <option value="45">45</option>
+                  <option value="60">60</option>
+                </select>
+              </label>
+
+              <label>
+                Intervalo entre alongamentos (s)
+                <select id="restSeconds">
+                  <option value="0">0</option>
+                  <option value="5" selected>5</option>
+                  <option value="10">10</option>
+                  <option value="15">15</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="row2">
+              <label>
+                Lado inicial (se o alongamento for “um lado”)
+                <select id="startSide">
+                  <option value="L" selected>Esquerda</option>
+                  <option value="R">Direita</option>
+                </select>
+              </label>
+
+              <label>
+                Modo de lado (para itens com <code>sides: "LR"</code>)
+                <select id="unilateralMode">
+                  <option value="off" selected>Ignorar (não usar lados)</option>
+                  <option value="alternate">Alternar lados (E/D)</option>
+                  <option value="pairs">Em pares (mesmo alongamento: E depois D)</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="toggles">
+              <label class="toggle">
+                <input id="beepEnabled" type="checkbox" checked />
+                <span>Beep nos últimos 5 segundos</span>
+              </label>
+              <label class="toggle">
+                <input id="speakEndEnabled" type="checkbox" checked />
+                <span>Falar “Alongamento concluído” no final</span>
+              </label>
+              <label class="toggle">
+                <input id="speakCountdownEnabled" type="checkbox" />
+                <span>Falar 5–1 (opcional)</span>
+              </label>
+              <label class="toggle">
+                <input id="announceStepEnabled" type="checkbox" checked />
+                <span>Falar o nome do alongamento ao começar</span>
+              </label>
+            </div>
+
+            <div class="row2">
+              <label>
+                Preferência de voz
+                <select id="voicePref">
+                  <option value="auto" selected>Automática</option>
+                  <option value="female">Preferir feminina</option>
+                  <option value="male">Preferir masculina</option>
+                  <option value="off">Sem voz</option>
+                </select>
+              </label>
+
+              <label>
+                Voz específica (opcional)
+                <select id="voiceSelect"></select>
+              </label>
+            </div>
+
+            <div class="row">
+              <button id="generateBtn" class="btn primary">Gerar sessão</button>
+              <button id="startBtn" class="btn primary" disabled>Iniciar</button>
+              <button id="saveSessionBtn" class="btn" disabled>Salvar sessão</button>
+            </div>
+
+            <div class="row wrap">
+              <div class="kpi">Estimativa: <b id="estimatedCount">—</b> alongamentos</div>
+              <div class="hint">Para usar alternância E/D, marque alguns itens no Banco com <code>sides: "LR"</code> (ou use seus personalizados).</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="cardHead">
+            <h2>Execução</h2>
+            <div class="mini" id="stepCounter">—</div>
+          </div>
+
+          <div class="player">
+            <div class="sessionTop">
+              <div>
+                <div class="chip" id="chipPhase">ALONGAMENTO</div>
+                <div class="nowTitle" id="nowTitle">—</div>
+                <div class="nowSub" id="nowSub">—</div>
+              </div>
+
+              <div class="timer">
+                <div class="timerBig" id="timerBig">00:00</div>
+                <div class="timerSub" id="timerSub">restante</div>
+              </div>
+            </div>
+
+            <div class="videoWrap">
+              <div id="videoFallback" class="videoFallback hidden">
+                <div class="videoFallbackTitle">Sem vídeo configurado</div>
+                <div class="mini">Use o botão abaixo para pesquisar no YouTube.</div>
+                <button id="btnOpenSearch" class="btn" type="button">Procurar no YouTube</button>
+              </div>
+
+              <iframe
+                id="youtubeFrame"
+                class="youtube"
+                title="Vídeo do alongamento"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowfullscreen
+                referrerpolicy="strict-origin-when-cross-origin"
+              ></iframe>
+            </div>
+
+            <div class="progress">
+              <div class="progressTop">
+                <div><span id="progressIndex">0</span>/<span id="progressTotal">0</span></div>
+                <div class="mini">Próximo: <span id="nextName">—</span></div>
+              </div>
+              <div class="bar"><div id="barFill" class="barFill"></div></div>
+            </div>
+
+            <div class="countdownLine">
+              <div class="mini" id="countdownLabel"></div>
+              <div class="countdown" id="countdownText"></div>
+            </div>
+
+            <div class="row wrap">
+              <button id="pauseBtn" class="btn" disabled>Pausar</button>
+              <button id="prevBtn" class="btn" disabled>Anterior</button>
+              <button id="nextBtn" class="btn" disabled>Próximo</button>
+              <button id="stopBtn" class="btn danger" disabled>Encerrar</button>
+              <button id="copyBtn" class="btn" disabled>Copiar sessão</button>
+            </div>
+
+            <div class="small" id="sessionStatus"></div>
+          </div>
+        </section>
+
+        <section class="card full">
+          <div class="cardHead">
+            <h2>Sequência</h2>
+            <div class="mini" id="sequenceMeta">—</div>
+          </div>
+          <ol id="sequenceList" class="routine"></ol>
+        </section>
+      </div>
+    </section>
+
+    <!-- TAB: BANCO -->
+    <section class="tabPanel" id="tab-banco" role="tabpanel">
+      <div class="grid">
+        <section class="card full">
+          <div class="cardHead">
+            <h2>Banco de alongamentos</h2>
+            <div class="mini" id="bankMeta">—</div>
+          </div>
+
+          <div class="row2">
+            <label>
+              Buscar
+              <input id="bankSearch" type="text" placeholder="Ex: quadríceps, pescoço, hip..." />
+            </label>
+            <label>
+              Filtro (pré/pós)
+              <select id="bankPhaseFilter">
+                <option value="all" selected>Todos</option>
+                <option value="pre">Pré-treino</option>
+                <option value="post">Pós-treino</option>
+                <option value="custom">Personalizados</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="row2">
+            <label>
+              Região
+              <select id="bankRegionFilter">
+                <option value="all" selected>Todas</option>
+              </select>
+            </label>
+            <label>
+              Nível
+              <select id="bankLevelFilter">
+                <option value="all" selected>Todos</option>
+                <option value="beginner">Beginner</option>
+                <option value="intermediate">Intermediate</option>
+                <option value="advanced">Advanced</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="row wrap">
+            <button id="selectAllBtn" class="btn">Selecionar tudo</button>
+            <button id="selectNoneBtn" class="btn">Selecionar nada</button>
+            <button id="deleteCustomBtn" class="btn danger">Apagar selecionados (personalizados)</button>
+          </div>
+
+          <div class="exerciseList" id="bankList"></div>
+
+          <hr class="sep" />
+
+          <h3>Novo alongamento (personalizado)</h3>
+          <div class="row2">
+            <label>
+              Nome (PT)
+              <input id="newNamePt" type="text" placeholder="Ex: Alongamento de panturrilha na parede" />
+            </label>
+            <label>
+              Tipo (pré/pós)
+              <select id="newPhase">
+                <option value="pre">Pré-treino</option>
+                <option value="post" selected>Pós-treino</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="row2">
+            <label>
+              Região (texto curto)
+              <input id="newRegion" type="text" placeholder="Ex: calf, hamstring, hip..." />
+            </label>
+            <label>
+              Lados (opcional)
+              <select id="newSides">
+                <option value="N" selected>Sem lado</option>
+                <option value="LR">Um lado (E/D)</option>
+                <option value="B">Bilateral</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="row2">
+            <label>
+              YouTube ID (opcional)
+              <input id="newYoutubeId" type="text" placeholder="Ex: dQw4w9WgXcQ" />
+            </label>
+            <label>
+              Busca YouTube (opcional)
+              <input id="newSearchQuery" type="text" placeholder="Ex: calf stretch wall" />
+            </label>
+          </div>
+
+          <div class="row">
+            <button id="addCustomBtn" class="btn primary">Adicionar</button>
+            <button id="resetCustomBtn" class="btn">Apagar todos personalizados</button>
+          </div>
+
+          <div class="hint">
+            Personalizados ficam salvos no aparelho. Para marcar “um lado”, use <code>Lados: Um lado (E/D)</code>.
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <!-- TAB: HISTORICO -->
+    <section class="tabPanel" id="tab-historico" role="tabpanel">
+      <div class="grid">
+        <section class="card full">
+          <div class="cardHead">
+            <h2>Histórico & Dados</h2>
+            <div class="mini" id="historyMeta">—</div>
+          </div>
+
+          <div class="row wrap">
+            <button id="exportBtn" class="btn">Exportar dados (.json)</button>
+            <label class="btn fileBtn">
+              Importar .json
+              <input id="importFile" type="file" accept="application/json" />
+            </label>
+            <button id="clearHistoryBtn" class="btn danger">Limpar histórico</button>
+          </div>
+
+          <div class="historyList" id="historyList"></div>
+
+          <hr class="sep" />
+
+          <h3>Sessão salva</h3>
+          <div class="row wrap">
+            <button id="loadSavedBtn" class="btn">Carregar sessão salva</button>
+            <button id="deleteSavedBtn" class="btn danger">Apagar sessão salva</button>
+          </div>
+          <div class="hint" id="savedHint">—</div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>v6 completo • GitHub Pages • HTML/CSS/JS</span>
+  </footer>
+
+  <script src="./app.js"></script>
+</body>
+</html>

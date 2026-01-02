@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Alongamento">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#22c55e"/>
+      <stop offset="1" stop-color="#0ea5e9"/>
+    </linearGradient>
+  </defs>
+  <rect x="44" y="44" width="424" height="424" rx="96" fill="url(#g)"/>
+  <circle cx="256" cy="186" r="42" fill="rgba(15,23,42,.92)"/>
+  <path d="M172 336c16-72 52-110 84-110s68 38 84 110" fill="none" stroke="rgba(15,23,42,.92)" stroke-width="36" stroke-linecap="round"/>
+  <path d="M154 280c56-28 106-38 204-38" fill="none" stroke="rgba(15,23,42,.92)" stroke-width="26" stroke-linecap="round" opacity=".9"/>
+</svg>
